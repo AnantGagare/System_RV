@@ -181,3 +181,133 @@ style = ttk.Style()
 style.configure("TButton", font=("Arial", 12, "bold"), padding=6)
 app = RoverSim(root)
 root.mainloop()
+
+
+ros2 run nav2_map_server map_saver_cli -f my_map
+my_map.pgm → grayscale image
+my_map.yaml → tells resolution, origin, thresholds
+
+👉 The grayscale values mean:
+
+0 (black) → obstacle
+
+205 (gray) → unknown
+
+255 (white) → free space
+
+
+import cv2
+import numpy as np
+
+# Load SLAM map (PGM file)
+img = cv2.imread("my_map.pgm", cv2.IMREAD_GRAYSCALE)
+
+# Initialize binary map
+binary_map = np.zeros_like(img, dtype=np.uint8)
+
+# Convert:
+# White (free space) -> 1
+# Black (occupied) -> 0
+# Gray (unknown) -> 0 (you can also treat unknown as -1 if needed)
+binary_map[img == 255] = 1
+binary_map[img == 0] = 0
+binary_map[img == 205] = 0  # or set -1 if you want unknown separate
+
+# Save binary image (optional)
+cv2.imwrite("my_map_binary.pgm", binary_map * 255)
+
+# Print as matrix (0/1)
+print(binary_map)
+
+
+
+Project Milestones Roadmap
+✅ Milestone 1: Data Collection (Done / In Progress)
+
+Record LiDAR scans with ros2 bag record /scan.
+
+Organize bag files for different test areas.
+
+Visualize raw scans in RViz2.
+
+👉 Deliverable: A few .db3 bag files + LiDAR scan visualization.
+
+🎯 Milestone 2: SLAM & Mapping
+
+Use slam_toolbox or cartographer_ros to process /scan (from bag or live).
+
+Generate 2D occupancy grid maps (map.yaml + map.pgm).
+
+Test with both online mapping (live LiDAR) and offline mapping (bag playback).
+
+👉 Deliverable: Working SLAM → saved maps of your environment.
+
+🎯 Milestone 3: Add IMU + Sensor Fusion
+
+Bring in IMU data → record with /scan /imu/data.
+
+Use robot_localization (EKF/UKF) for sensor fusion.
+
+Get /odom/filtered → more accurate pose estimation.
+
+👉 Deliverable: A fused odometry source ready for localization + navigation.
+
+🎯 Milestone 4: Localization (AMCL)
+
+Load your prebuilt map into ROS2.
+
+Run AMCL (Adaptive Monte Carlo Localization).
+
+Verify robot pose tracking in RViz2 while playing bag files.
+
+👉 Deliverable: Reliable localization on static maps.
+
+🎯 Milestone 5: Navigation Stack (Nav2)
+
+Install and configure Nav2.
+
+Connect /scan, /odom/filtered, /map, /amcl_pose to Nav2.
+
+Test Global Planner (A*, Smac) and Local Planner (DWB, TEB).
+
+Send goals in RViz2 → rover finds path and outputs /cmd_vel.
+
+👉 Deliverable: Fully working navigation in simulation (RViz2).
+
+🎯 Milestone 6: Gazebo Simulation
+
+Build URDF/Xacro model of your rover with LiDAR + IMU.
+
+Spawn it in Gazebo.
+
+Test SLAM + Nav2 inside simulation.
+
+Tune parameters (sensor noise, wheelbase, etc.).
+
+👉 Deliverable: Rover navigating in a virtual Gazebo world.
+
+🎯 Milestone 7: Real Hardware Integration
+
+Deploy the same ROS2 setup on your rover hardware (Raspberry Pi / Jetson).
+
+Connect real RPLiDAR + IMU + motors.
+
+Run SLAM + Nav2 in real-world tests.
+
+👉 Deliverable: Physical rover performing SLAM + Navigation in real environment.
+
+📌 TL;DR Roadmap
+
+✅ Record & visualize LiDAR → (Done)
+
+🗺️ SLAM mapping
+
+➕ Add IMU + EKF fusion
+
+📍 Localization with AMCL
+
+🧭 Navigation (Nav2)
+
+🎮 Gazebo simulation testing
+
+🤖 Real hardware deployment
